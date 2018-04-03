@@ -63,6 +63,14 @@ public class Job {
                 '}';
     }
 
+    public String getCaption() {
+        return String.format("%s is looking for a %s in %s",
+            getCompany(),
+            getTitle(),
+            getCity()
+        );
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
