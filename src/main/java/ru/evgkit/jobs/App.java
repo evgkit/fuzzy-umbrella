@@ -1,13 +1,16 @@
 package ru.evgkit.jobs;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import ru.evgkit.jobs.model.Job;
 import ru.evgkit.jobs.service.JobService;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class App {
 
@@ -26,28 +29,16 @@ public class App {
         }
     }
 
-    private static boolean isJuniorJob(Job job) {
-        String title = job.getTitle().toLowerCase();
-        return title.contains("junior") || title.contains("jr");
-    }
-
     private static void explore(List<Job> jobs) {
-        getThreeJunJobsStream(jobs).forEach(System.out::println);
+        getCaptionsImperatively(jobs).forEach(System.out::println);
     }
 
-    private static List<Job> getThreeJunJobsStream(List<Job> jobs) {
-        return jobs.stream()
-            .filter(App::isJuniorJob)
-            .limit(3)
-            .collect(Collectors.toList());
-    }
-
-    private static List<String> getCaptionsStream(List<Job> jobs) {
-        return jobs.parallelStream()
-            .filter(App::isJuniorJob)
-            .map(Job::getCaption)
-            .limit(3)
-            .collect(Collectors.toList());
+    private static void printJobsImperatively(List<Job> jobs) {
+        for (Job job : jobs) {
+            if (job.getState().equals("OR") && job.getCity().equals("Portland")) {
+                System.out.println(job);
+            }
+        }
     }
 
     private static void printJobsStream(List<Job> jobs) {
@@ -71,6 +62,13 @@ public class App {
         return juniorJobs;
     }
 
+    private static List<Job> getThreeJunJobsStream(List<Job> jobs) {
+        return jobs.stream()
+            .filter(App::isJuniorJob)
+            .limit(3)
+            .collect(Collectors.toList());
+    }
+
     private static List<String> getCaptionsImperatively(List<Job> jobs) {
         List<String> captions = new ArrayList<>();
         for (Job job : jobs) {
@@ -84,11 +82,49 @@ public class App {
         return captions;
     }
 
-    private static void printJobsImperatively(List<Job> jobs) {
+    private static List<String> getCaptionsStream(List<Job> jobs) {
+        return jobs.parallelStream()
+            .filter(App::isJuniorJob)
+            .map(Job::getCaption)
+            .limit(3)
+            .collect(Collectors.toList());
+    }
+
+    private static boolean isJuniorJob(Job job) {
+        String title = job.getTitle().toLowerCase();
+        return title.contains("junior") || title.contains("jr");
+    }
+
+    private static Map<String, Long> getSnippetWordCountsImperatively(List<Job> jobs) {
+        Map<String, Long> wordCounts = new HashMap<>();
+
         for (Job job : jobs) {
-            if (job.getState().equals("OR") && job.getCity().equals("Portland")) {
-                System.out.println(job);
+            String[] words = job.getSnippet().split("\\W+");
+            for (String word : words) {
+                if (word.length() == 0) {
+                    continue;
+                }
+                String lWord = word.toLowerCase();
+                Long count = wordCounts.get(lWord);
+                if (count == null) {
+                    count = 0L;
+                }
+                wordCounts.put(lWord, ++count);
             }
         }
+        return wordCounts;
+    }
+
+    private static Map<String, Long> getSnippetWordCountsStream(List<Job> jobs) {
+        return jobs.stream()
+            .map(Job::getSnippet)
+            .map(snippet -> snippet.split("\\W+"))
+            .flatMap(Stream::of)
+            .filter(word -> word.length() > 0)
+            .map(String::toLowerCase)
+            .collect(Collectors.groupingBy(
+                Function.identity(),
+                Collectors.counting()
+            ));
     }
 }
