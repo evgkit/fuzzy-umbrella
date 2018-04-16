@@ -4,12 +4,10 @@ import ru.evgkit.jobs.model.Job;
 import ru.evgkit.jobs.service.JobService;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class App {
@@ -30,9 +28,43 @@ public class App {
     }
 
     private static void explore(List<Job> jobs) {
-        getCaptionsImperatively(jobs).forEach(System.out::println);
+        List<String> companies = jobs.stream()
+            .map(Job::getCompany)
+            .distinct()
+            .sorted()
+            .collect(Collectors.toList());
+
+        displayCompaniesMenuUsingRange(companies);
     }
 
+    private static void displayCompaniesMenuUsingRange(List<String> companies) {
+        IntStream.rangeClosed(1, 20)
+            .mapToObj(i -> String.format("%d. %s", i, companies.get(i - 1)))
+            .forEach(System.out::println);
+    }
+
+    private static void displayCompaniesMenuImperatively(List<String> companies) {
+        for (int i = 0; i < 20; i++) {
+            System.out.printf("%d. %s %n", i + 1, companies.get(i));
+        }
+    }
+
+    // Optional
+    private static void luckySearchJob(List<Job> jobs, String searchTerm) {
+        jobs.stream()
+            .filter(job -> job.getTitle().contains(searchTerm))
+            .findFirst()
+            .ifPresent(job -> System.out.println(job.getTitle()));
+    }
+
+    // Reduction
+    private static Optional<String> getLargestCompanyName(List<Job> jobs) {
+        return jobs.stream()
+            .map(Job::getCompany)
+            .max(Comparator.comparingInt(String::length));
+    }
+
+    // Streams
     private static void printJobsImperatively(List<Job> jobs) {
         for (Job job : jobs) {
             if (job.getState().equals("OR") && job.getCity().equals("Portland")) {
@@ -49,6 +81,7 @@ public class App {
             .forEach(System.out::println);
     }
 
+    // Collectors
     private static List<Job> getThreeJunJobsImperatively(List<Job> jobs) {
         List<Job> juniorJobs = new ArrayList<>();
         for (Job job : jobs) {
@@ -69,6 +102,7 @@ public class App {
             .collect(Collectors.toList());
     }
 
+    // Mapping
     private static List<String> getCaptionsImperatively(List<Job> jobs) {
         List<String> captions = new ArrayList<>();
         for (Job job : jobs) {
