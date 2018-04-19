@@ -28,18 +28,22 @@ public class App {
     }
 
     private static void explore(List<Job> jobs) {
-        List<String> companies = jobs.stream()
-            .map(Job::getCompany)
-            .distinct()
-            .sorted()
-            .collect(Collectors.toList());
+        displayCompaniesMenuUsingRange(getCompanies(jobs));
+    }
 
-        displayCompaniesMenuUsingRange(companies);
+    private static List<String> getCompanies(List<Job> jobs) {
+        return jobs.stream()
+                .map(Job::getCompany)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     private static void displayCompaniesMenuUsingRange(List<String> companies) {
-        IntStream.rangeClosed(1, 20)
+        int pageSize = 20;
+        IntStream.iterate(1, i -> i + pageSize)
             .mapToObj(i -> String.format("%d. %s", i, companies.get(i - 1)))
+            .limit(companies.size() / pageSize)
             .forEach(System.out::println);
     }
 
