@@ -4,8 +4,11 @@ import ru.evgkit.jobs.model.Job;
 import ru.evgkit.jobs.service.JobService;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -27,10 +30,52 @@ public class App {
         }
     }
 
+
     private static void explore(List<Job> jobs) {
-        displayCompaniesMenuUsingRange(getCompanies(jobs));
+        Predicate<Job> caJobChecker = job -> job.getState().equals("CA");
+        emailIfMatches(jobs.stream()
+            .filter(caJobChecker)
+            .findFirst()
+            .orElseThrow(NullPointerException::new), caJobChecker.and(App::isJuniorJob));
+
+        Function<String, LocalDateTime> indeedDateConverter = dateString -> LocalDateTime.parse(
+            dateString,
+            DateTimeFormatter.RFC_1123_DATE_TIME
+        );
+        Function<LocalDateTime, String> siteDateStringConverter = date -> date.format(
+            DateTimeFormatter.ofPattern("M / d / YY")
+        );
+        jobs.stream()
+            .map(Job::getDateTimeString)
+            .map(indeedDateConverter.andThen(siteDateStringConverter))
+            .limit(5)
+            .forEach(System.out::println);
+
+        jobs.stream()
+            .map(Job::getDateTimeString)
+            .map(createDateStringConverter(
+                DateTimeFormatter.RFC_1123_DATE_TIME,
+                DateTimeFormatter.ISO_DATE_TIME
+            ))
+            .limit(5)
+            .forEach(System.out::println);
     }
 
+    public static Function<String, String> createDateStringConverter(
+        DateTimeFormatter inFormatter,
+        DateTimeFormatter outFormatter
+    ) {
+        return dateString -> LocalDateTime.parse(dateString, inFormatter).format(outFormatter);
+    }
+
+    // High order functions
+    public static void emailIfMatches(Job job, Predicate<Job> checker) {
+        if (checker.test(job)) {
+            System.out.println("Sending an email about " + job);
+        }
+    }
+
+    // Ranges
     private static List<String> getCompanies(List<Job> jobs) {
         return jobs.stream()
                 .map(Job::getCompany)
